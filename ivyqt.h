@@ -18,26 +18,36 @@ class IvyQt : public QObject
 {
     Q_OBJECT
 public:
-    explicit IvyQt(QString name, QObject *parent = nullptr);
+    explicit IvyQt(QString name, QString msgReady = "", QObject *parent = nullptr);
     void start(QString domain, int udp_port);
 
     int bindMessage(QString regex, std::function<void(QStringList)> callback);
     void unBindMessage(int bindId);
     void send(QString message);
+
+    /**
+     * @brief stop request. the "stopped" signal will be emitted once stop is effective.
+     */
     void stop();
 
 signals:
+    void peerReady(QString name);
+    void peerDied(QString name);
+    void stopped();
 
 private slots:
     void tcphandle();
     void udphandle();
     void handleMessage(QString id, QStringList params);
     void deletePeer(Peer* peer);
+    void newPeerReady(Peer* peer);
 
 private:
 
     void newPeer(QTcpSocket* socket);
+    void completeStop();
     QString name;
+    QString msgReady;
 
     QUdpSocket* udp_socket;
     QTcpServer* server;
@@ -46,6 +56,11 @@ private:
 
     QMap<int /*bindId*/, Binding> bindings;
     int nextBindId;
+
+    QString watcherId;
+
+    bool running;
+    bool stopRequested;
 };
 
 #endif // IVYQT_H

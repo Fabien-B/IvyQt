@@ -2,15 +2,16 @@
 
 Peer::Peer(QTcpSocket* tcp_socket, QObject* parent) :
     QObject(parent),
-    peerId(""), appName(""), socket(tcp_socket), status(INIT)
+    peerId(""), appName(""), socket(tcp_socket), state(INIT),
+    info_sent(false), info_rcv(false)
 {
-    connect(tcp_socket, &QTcpSocket::readyRead, this, [=]() {
+    connect(socket, &QTcpSocket::readyRead, this, [=]() {
         rcv_array += tcp_socket->readAll();
         process();
     });
 
-    connect(tcp_socket, &QTcpSocket::disconnected, this, [=]() {
-        status = APP_QUIT;
+    connect(socket, &QTcpSocket::disconnected, this, [=]() {
+        state = APP_QUIT;
         emit peerDied(this);
     });
 }
@@ -40,106 +41,55 @@ void Peer::parseMessage(QByteArray message) {
     auto ident = message.mid(2, stx_pos-2);
     auto params=message.mid(stx_pos+1, message.length() - stx_pos - 2);
 
-    qDebug() << "type:" << type << "ident:" << ident << "params:" << params;
-
-    if(status == INIT) {
-        if(type == "0") {
-            // Bye
-            status = APP_QUIT;
-        } else if(type == "1") {
-            // Subscription
-            qDebug() << "Received subscription before peer Id. Who are you ?";
-        } else if(type == "2") {
-            // Text message
-            qDebug() << "Received text message before peer Id. Who are you ?";
-        } else if(type == "3") {
-            // Error
-            qDebug() << "App " << appName << " encoutered error " << params;
-        } else if(type == "4") {
-            // Subscription deletion
-            qDebug() << "Received message of type " << type << " before type 6!";
-        } else if(type == "5") {
-            // End of initial subscriptions.
-            qDebug() << "Received Subscription deletion before peer Id. Who are you ?";
-        } else if(type == "6") {
+    if(type == "0") {
+        // Bye
+        stop();
+        state = APP_QUIT;
+    } else if(type == "1") {
+        // Subscription
+        if(state == SYNCHRONIZED || state == INI_SUBS_OK) {
+            subscribe(ident, params);
+        } else {
+            qDebug() << "Received subscription while in state " << state;
+        }
+    } else if(type == "2") {
+        // Text message
+        if (state == INI_SUBS_OK) {
+            handle_message(ident, params);
+        } else {
+            qDebug() << "Received text message while in state " << state;
+        }
+    } else if(type == "3") {
+        // Error
+        qDebug() << "App " << appName << " encoutered error " << params;
+    } else if(type == "4") {
+        // Subscription deletion
+        if(state == INI_SUBS_OK) {
+            unsubscribe(ident);
+        } else {
+            qDebug() << "Received subscription deletion while in state " << state;
+        }
+    } else if(type == "5") {
+        // End of initial subscriptions.
+        if (state == SYNCHRONIZED) {
+            state = INI_SUBS_OK;
+            info_rcv = true;
+            if(info_sent) {
+                emit ready(this);
+            }
+        } else {
+            qDebug() << "Received endOfSub while in state " << state;
+        }
+    } else if(type == "6") {
+        if(state == INIT) {
             //Peer ID
             appPort = ident.toUInt();
             peerId = peer_id(socket->peerAddress(), appPort);
             appName = params;
-            status = SYNCHRONIZED;
+            state = SYNCHRONIZED;
+        } else {
+            qDebug() << "Received peerID while in state " << state;
         }
-
-    } else if (status == SYNCHRONIZED) {
-        if(type == "0") {
-            // Bye
-            status = APP_QUIT;
-        } else if(type == "1") {
-            // Subscription
-            subscribe(ident, params);
-        } else if(type == "2") {
-            // Text message
-            qDebug() << "don't you want to give your subs first ?";
-        } else if(type == "3") {
-            // Error
-            qDebug() << "App " << appName << " encoutered error " << params;
-        } else if(type == "4") {
-            // Subscription deletion
-            qDebug() << "don't you want to give your subs first ?";
-        } else if(type == "5") {
-            // End of initial subscriptions.
-            status = INI_SUBS_OK;
-        } else if(type == "6") {
-            //Peer ID
-            qDebug() << "I know you! Get out of here, you nasty boy!";
-        }
-    } else if (status == INI_SUBS_OK) {
-        if(type == "0") {
-            // Bye
-            status = APP_QUIT;
-        } else if(type == "1") {
-            // Subscription
-            subscribe(ident, params);
-        } else if(type == "2") {
-            // Text message
-            handle_message(ident, params);
-        } else if(type == "3") {
-            // Error
-            qDebug() << "App " << appName << " encoutered error " << params;
-        } else if(type == "4") {
-            // Subscription deletion
-            unsubscribe(ident);
-        } else if(type == "5") {
-            // End of initial subscriptions.
-            qDebug() << "It was already over! Go back to your bed now!";
-        } else if(type == "6") {
-            //Peer ID
-        }
-    } else if (status == APP_QUIT) {
-        if(type == "0") {
-            // Bye
-            status = APP_QUIT;
-        } else if(type == "1") {
-            // Subscription
-            qDebug() << "don't care";
-        } else if(type == "2") {
-            // Text message
-            qDebug() << "don't care";
-        } else if(type == "3") {
-            // Error
-            qDebug() << "App " << appName << " encoutered error " << params << "But I really don't care";
-        } else if(type == "4") {
-            // Subscription deletion
-            qDebug() << "don't care";
-        } else if(type == "5") {
-            // End of initial subscriptions.
-            qDebug() << "don't care";
-        } else if(type == "6") {
-            //Peer ID
-            qDebug() << "don't care";
-        }
-    }
-    else {
-        qDebug() << "Status not handled ! THIS IS BAD!!! " << status;
     }
 }
 
@@ -155,8 +105,13 @@ void Peer::unsubscribe(QString id) {
 
 void Peer::handle_message(QString id, QString params) {
     auto parameters = params.split(0x03);
-    qDebug() << "message for regex " << id << "with params" << parameters;
     emit message(id, parameters);
+}
+
+void Peer::stop() {
+    if(socket) {
+        socket->disconnectFromHost();
+    }
 }
 
 void Peer::sendMessage(QString message) {

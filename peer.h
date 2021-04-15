@@ -61,9 +61,24 @@ public:
 
     QString name() {return appName;}
 
+    void setInfoSent() {
+        info_sent = true;
+        if(info_rcv) {
+            emit ready(this);
+        }
+    }
+
+    /**
+     * @brief stop disconnect from peer
+     */
+    void stop();
+
 signals:
     void message(QString id, QStringList params);
     void peerDied(Peer*);
+
+    // app is ready for this peer : handshake info has been sent and received
+    void ready(Peer*);
 
 private:
     void process();
@@ -79,9 +94,15 @@ private:
     QTcpSocket* socket;
     quint16 appPort;
     QByteArray rcv_array;
-    PeerStatus status;
+    PeerStatus state;
 
     QMap<QString /*numerical identifier*/, QString /*regex*/> subscriptions;
+
+    // does handshake info has been send to peer ?
+    bool info_sent;
+
+    // does handshake info has been received from peer ?
+    bool info_rcv;
 };
 
 #endif // PEER_H

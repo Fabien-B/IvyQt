@@ -1,37 +1,37 @@
 #include "ivyqt.h"
 #include <QUdpSocket>
+#include <QRandomGenerator>
 
-IvyQt::IvyQt(QString name, QObject *parent) :
+IvyQt::IvyQt(QString name, QString msgReady, QObject *parent) :
     QObject(parent),
-    name(name), udp_socket(nullptr), nextBindId(0)
+    name(name), msgReady(msgReady),
+    udp_socket(nullptr), server(nullptr), nextBindId(0),
+    running(false), stopRequested(false)
 {
 
 }
 
 void IvyQt::start(QString domain, int udp_port) {
-    /// setUpChannels action
     // start TCP server
     server = new QTcpServer(this);
     bool res = server->listen();
     assert(res == true);
     connect(server, &QTcpServer::newConnection, this, &IvyQt::tcphandle);
-    int tcp_port = server->serverPort();
 
     // start UDP socket
     udp_socket = new QUdpSocket(this);
     udp_socket->bind(udp_port, QUdpSocket::ShareAddress | QUdpSocket::ReuseAddressHint);
     connect(udp_socket, &QUdpSocket::readyRead, this, &IvyQt::udphandle);
 
-    /// Broadcast action
-    QByteArray data;
-    data += "3 ";
-    data += QString::number(tcp_port);
-    data += " ohohoh ";
-    data += name;
-    data += "\n";
+    // generate a uniq ID
+    watcherId = QString::number(QRandomGenerator::system()->generate64());
 
+    // forge broadcast data
+    QByteArray data;
+    data += QString("3 %1 %2 %3\n").arg(QString::number(server->serverPort()), watcherId, name);
     udp_socket->writeDatagram(data, QHostAddress(domain), udp_port);
 
+    running = true;
 }
 
 
@@ -61,10 +61,20 @@ void IvyQt::unBindMessage(int bindId) {
 }
 
 void IvyQt::stop() {
-    for(auto peer: qAsConst(peers)) {
-        peer->sendBye();
+    stopRequested = true;
+    if(!running) {
+        return;
     }
-    //TODO rest of the stop process
+    if(peers.length() == 0) {
+        completeStop();
+    } else {
+        //stop will completed after all peer has been deleted
+        for(auto peer: qAsConst(peers)) {
+            peer->sendBye();
+            peer->stop();
+        }
+    }
+
 }
 
 void IvyQt::send(QString message) {
@@ -82,7 +92,6 @@ void IvyQt::tcphandle() {
 
 void IvyQt::udphandle() {
     while (udp_socket->hasPendingDatagrams()) {
-        qDebug() << "new datagram";
         QByteArray datagram;
         datagram.resize(udp_socket->pendingDatagramSize());
         QHostAddress sender;
@@ -91,14 +100,15 @@ void IvyQt::udphandle() {
         udp_socket->readDatagram(datagram.data(), datagram.size(),
                                 &sender, &senderPort);
         QString msg = QString(datagram.data()).trimmed();
-        qDebug() << "UDP said " << msg;
         // "<protocol number> <port> <???> <app name>"
         auto params = msg.split(" ");
-        assert(params[0] == "3");
+        if(params[0] != "3") {
+            qDebug() << "Protocol version not supported!";
+            return;
+        }
         quint16 tcp_port = params[1].toUInt();
-        QString appName = params[3];
-        if(tcp_port == server->serverPort() && appName == name) {
-            //that should be my own message, ignoring it.
+        if(tcp_port == server->serverPort() && watcherId == params[2]) {
+            //that's my own message, ignoring it.
             return;
         }
 
@@ -108,23 +118,33 @@ void IvyQt::udphandle() {
         connect(socket, &QTcpSocket::connected, this, [=]() {
             newPeer(socket);
         });
-
     }
 }
 
 void IvyQt::newPeer(QTcpSocket* socket) {
     auto peer = new Peer(socket, this);
-    peers.append(peer);
-    connect(peer, &Peer::message, this, &IvyQt::handleMessage);
-    // a new peer connected to me
-    // send a synchro message and initial subscriptions.
+
+    connect(peer, &Peer::ready,    this, &IvyQt::newPeerReady);
+    connect(peer, &Peer::message,  this, &IvyQt::handleMessage);
     connect(peer, &Peer::peerDied, this, &IvyQt::deletePeer);
 
+    // send a synchro message and initial subscriptions.
     peer->sendId(server->serverPort(), name);
     for(auto &b: bindings) {
         peer->bind(b.bindId, b.regex);
     }
     peer->end_initial_bindings();
+    peer->setInfoSent();
+
+    peers.append(peer);
+}
+
+void IvyQt::newPeerReady(Peer* peer) {
+    if(msgReady != "") {
+        peer->sendMessage(msgReady);
+    }
+
+    emit peerReady(peer->name());
 }
 
 void IvyQt::handleMessage(QString id, QStringList params) {
@@ -136,7 +156,23 @@ void IvyQt::handleMessage(QString id, QStringList params) {
 
 
 void IvyQt::deletePeer(Peer* peer) {
-    qDebug() << peer->name() << "quited";
+    auto peerName = peer->name();
     peers.removeAll(peer);
     peer->deleteLater();
+
+    emit peerDied(peerName);
+
+    // stopping properly so start can be called again.
+    if(stopRequested && peers.length() == 0) {
+        completeStop();
+    }
+}
+
+void IvyQt::completeStop() {
+    running = false;
+    udp_socket->deleteLater();
+    server->deleteLater();
+    udp_socket = nullptr;
+    server = nullptr;
+    emit stopped();
 }
