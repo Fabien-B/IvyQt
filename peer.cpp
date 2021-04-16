@@ -43,12 +43,13 @@ void Peer::process() {
 }
 
 void Peer::parseMessage(QByteArray message) {
-    assert(message.at(1) == ' ');
     assert(message.at(message.length()-1) == '\n');
 
-    auto type = message.left(1);
+    int space_pos = message.indexOf(' ');
     int stx_pos = message.indexOf(0x02);       // Find 0x02
-    auto ident = message.mid(2, stx_pos-2);
+
+    auto type = message.left(space_pos);
+    auto ident = message.mid(space_pos + 1, stx_pos-space_pos-1);
     auto params=message.mid(stx_pos+1, message.length() - stx_pos - 2);
 
     if(type == "0") {
