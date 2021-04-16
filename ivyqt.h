@@ -10,7 +10,7 @@
 
 struct Binding {
     QString regex;
-    std::function<void(QStringList)> callback;
+    std::function<void(Peer* sender, QStringList params)> callback;
     int bindId;
 };
 
@@ -21,7 +21,7 @@ public:
     explicit IvyQt(QString name, QString msgReady = "", QObject *parent = nullptr);
     void start(QString domain, int udp_port);
 
-    int bindMessage(QString regex, std::function<void(QStringList)> callback);
+    int bindMessage(QString regex, std::function<void(Peer*, QStringList)> callback);
     void unBindMessage(int bindId);
     void send(QString message);
 
@@ -33,14 +33,14 @@ public:
     QStringList getPeers();
 
 signals:
-    void peerReady(QString name);
+    void peerReady(Peer* peer);
+    void directMessage(Peer* peer, int identifier, QString params);
     void peerDied(QString name);
     void stopped();
 
 private slots:
     void tcphandle();
     void udphandle();
-    void handleMessage(QString id, QStringList params);
     void deletePeer(Peer* peer);
     void newPeerReady(Peer* peer);
 

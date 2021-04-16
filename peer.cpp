@@ -82,13 +82,20 @@ void Peer::parseMessage(QByteArray message) {
         }
     } else if(type == "6") {
         if(state == INIT) {
-            //Peer ID
+            // Peer ID
             appPort = ident.toUInt();
             peerId = peer_id(socket->peerAddress(), appPort);
             appName = params;
             state = SYNCHRONIZED;
         } else {
             qDebug() << "Received peerID while in state " << state;
+        }
+    } else if(type == "7") {
+        // Direct message
+        if(state == INI_SUBS_OK) {
+            emit directMessage(ident.toInt(), params);
+        } else {
+            qDebug() << "Received Direct message while in state " << state;
         }
     }
 }

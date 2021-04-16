@@ -6,6 +6,8 @@
 #include <QHostAddress>
 #include <QRegularExpression>
 
+class IvyQt;
+
 enum PeerStatus {
     INIT,
     SYNCHRONIZED,
@@ -16,13 +18,23 @@ enum PeerStatus {
 class Peer : public QObject
 {
     Q_OBJECT
+    friend IvyQt;
 public:
     Peer(QTcpSocket* tcp_socket, QObject* parent = nullptr);
     ~Peer();
 
     QString peer_id(QHostAddress addr, quint16 port);
 
+    QString name() {return appName;}
 
+signals:
+    void message(QString id, QStringList params);
+    void directMessage(int identifier, QString params);
+    void peerDied(Peer*);
+    // app is ready for this peer : handshake info has been sent and received
+    void ready(Peer*);
+
+private:    /// to be accessed by IvyQt
 
     /**
      * @brief sendMessage send the message to the peer
@@ -60,8 +72,6 @@ public:
      */
     void sendId(quint16 port, QString myName);
 
-    QString name() {return appName;}
-
     void setInfoSent() {
         info_sent = true;
         if(info_rcv) {
@@ -74,14 +84,7 @@ public:
      */
     void stop();
 
-signals:
-    void message(QString id, QStringList params);
-    void peerDied(Peer*);
-
-    // app is ready for this peer : handshake info has been sent and received
-    void ready(Peer*);
-
-private:
+private:    /// really private stuff
     void process();
     void parseMessage(QByteArray message);
     void subscribe(QString id, QString regex);

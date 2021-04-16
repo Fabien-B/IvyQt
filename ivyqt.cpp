@@ -36,7 +36,7 @@ void IvyQt::start(QString domain, int udp_port) {
 }
 
 
-int IvyQt::bindMessage(QString regex, std::function<void(QStringList)> callback) {
+int IvyQt::bindMessage(QString regex, std::function<void(Peer*, QStringList)> callback) {
     nextBindId++;
     Binding b = {
         regex,
@@ -133,9 +133,17 @@ void IvyQt::udphandle() {
 void IvyQt::newPeer(QTcpSocket* socket) {
     auto peer = new Peer(socket, this);
 
-    connect(peer, &Peer::ready,    this, &IvyQt::newPeerReady);
-    connect(peer, &Peer::message,  this, &IvyQt::handleMessage);
-    connect(peer, &Peer::peerDied, this, &IvyQt::deletePeer);
+    connect(peer, &Peer::ready,         this, &IvyQt::newPeerReady);
+    connect(peer, &Peer::peerDied,      this, &IvyQt::deletePeer);
+    connect(peer, &Peer::message,       this, [=](QString id, QStringList params) {
+        int bindId = id.toInt();
+        if(bindings.contains(bindId)) {
+            bindings[bindId].callback(peer, params);
+        }
+    });
+    connect(peer, &Peer::directMessage, this, [=](int identifier, QString params) {
+        emit directMessage(peer, identifier, params);
+    });
 
     // send a synchro message and initial subscriptions.
     peer->sendId(server->serverPort(), name);
@@ -153,16 +161,8 @@ void IvyQt::newPeerReady(Peer* peer) {
         peer->sendMessage(msgReady);
     }
 
-    emit peerReady(peer->name());
+    emit peerReady(peer);
 }
-
-void IvyQt::handleMessage(QString id, QStringList params) {
-    int bindId = id.toInt();
-    if(bindings.contains(bindId)) {
-        bindings[bindId].callback(params);
-    }
-}
-
 
 void IvyQt::deletePeer(Peer* peer) {
     auto peerName = peer->name();
