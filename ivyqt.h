@@ -30,7 +30,18 @@ public:
      */
     void stop();
 
+    /**
+     * @brief getPeers
+     * @return all current peers
+     */
     QList<Peer*> getPeers();
+
+    /**
+     * @brief getPeer
+     * @param name
+     * @return peer with "name". nullptr if not found.
+     */
+    Peer* getPeer(QString name);
 
     /**
      * @brief setFlushTimeout set the timeout after which buffer will be flushed. Default to 0.

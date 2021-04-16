@@ -30,6 +30,30 @@ Peer::~Peer() {
     socket->deleteLater();
 }
 
+QStringList Peer::getBindings() {
+    QStringList list;
+    for(auto &b: subscriptions) {
+        list.append(b.pattern());
+    }
+    return list;
+}
+
+QHostAddress Peer::getHost() {
+    if(socket) {
+        return socket->peerAddress();
+    } else {
+        return QHostAddress();
+    }
+}
+
+quint16 Peer::getPort() {
+    if(socket) {
+        return socket->peerPort();
+    } else {
+        return 0;
+    }
+}
+
 void Peer::process() {
     if(rcv_array.contains('\n')) {
         int bytes = rcv_array.indexOf('\n') + 1;       // Find the end of message

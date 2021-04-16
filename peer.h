@@ -42,6 +42,12 @@ public:
      */
     int sendPing();
 
+    QStringList getBindings();
+
+    QHostAddress getHost();
+
+    quint16 getPort();
+
 signals:
     void message(QString id, QStringList params);
     void directMessage(int identifier, QString params);

@@ -89,6 +89,15 @@ QList<Peer*> IvyQt::getPeers() {
     return peers;
 }
 
+Peer* IvyQt::getPeer(QString name) {
+    for(auto peer: qAsConst(peers)) {
+        if(peer->name() == name) {
+            return peer;
+        }
+    }
+    return nullptr;
+}
+
 void IvyQt::setFlushTimeout(int msec) {
     for(auto peer: qAsConst(peers)) {
         peer->setFlushTimeout(msec);
