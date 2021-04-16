@@ -85,12 +85,8 @@ void IvyQt::send(QString message) {
     }
 }
 
-QStringList IvyQt::getPeers() {
-    QStringList peersNames;
-    for(auto p: qAsConst(peers)) {
-        peersNames.append(p->name());
-    }
-    return peersNames;
+QList<Peer*> IvyQt::getPeers() {
+    return peers;
 }
 
 void IvyQt::setFlushTimeout(int msec) {

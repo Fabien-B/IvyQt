@@ -30,7 +30,7 @@ public:
      */
     void stop();
 
-    QStringList getPeers();
+    QList<Peer*> getPeers();
 
     /**
      * @brief setFlushTimeout set the timeout after which buffer will be flushed. Default to 0.
