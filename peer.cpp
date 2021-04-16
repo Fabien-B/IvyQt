@@ -111,7 +111,24 @@ void Peer::parseMessage(QByteArray message) {
     } else if(type == "8") {
         // Quit message
         emit quitRequest();
-    } else {
+    }
+    else if(type == "9") {
+        // Ping message
+        // answer with pong, and the same ping id.
+        send_data(10, ident, "");
+    }
+    else if(type == "10") {
+        // Pong message
+        int pong_id = ident.toInt();
+        if(ping_ids.contains(pong_id)) {
+            qint64 ping_time = ping_ids[pong_id].elapsed();
+            ping_ids.remove(pong_id);
+            emit pingCompleted(pong_id, ping_time);
+        } else {
+            qDebug() << "received pong, but no ping was sent!";
+        }
+    }
+    else {
         qDebug() << "message " << type << " not handled. Is it in the doc ???";
     }
 }
@@ -182,6 +199,15 @@ void Peer::sendDirectMessage(int identifier, QString params) {
 
 void Peer::sendQuit() {
     send_data(8, "0", "");
+}
+
+int Peer::sendPing() {
+    last_ping_id += 1;
+    int ping_id = last_ping_id;
+    ping_ids[ping_id] = QElapsedTimer();
+    ping_ids[ping_id].start();
+    send_data(9, QString::number(ping_id), "");
+    return ping_id;
 }
 
 void Peer::send_data(int type, QString ident, QString params) {

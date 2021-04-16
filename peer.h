@@ -6,6 +6,7 @@
 #include <QHostAddress>
 #include <QRegularExpression>
 #include <QTimer>
+#include <QElapsedTimer>
 
 class IvyQt;
 
@@ -35,6 +36,12 @@ public:
      */
     void sendQuit();
 
+    /**
+     * @brief sendPing
+     * @return ping id. subscribe to pingCompleted to get final result.
+     */
+    int sendPing();
+
 signals:
     void message(QString id, QStringList params);
     void directMessage(int identifier, QString params);
@@ -42,6 +49,7 @@ signals:
     void peerDied(Peer*);
     // app is ready for this peer : handshake info has been sent and received
     void ready(Peer*);
+    void pingCompleted(int ping_id, qint64 msec);
 
 private:    /// to be accessed by IvyQt
 
@@ -122,6 +130,8 @@ private:    /// really private stuff
     bool info_rcv;
 
     QTimer* flushTimer;
+    QMap<int, QElapsedTimer> ping_ids;
+    int last_ping_id;
 };
 
 #endif // PEER_H
