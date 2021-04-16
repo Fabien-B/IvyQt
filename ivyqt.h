@@ -30,6 +30,8 @@ public:
      */
     void stop();
 
+    QStringList getPeers();
+
 signals:
     void peerReady(QString name);
     void peerDied(QString name);

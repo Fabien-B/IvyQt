@@ -83,6 +83,14 @@ void IvyQt::send(QString message) {
     }
 }
 
+QStringList IvyQt::getPeers() {
+    QStringList peersNames;
+    for(auto p: qAsConst(peers)) {
+        peersNames.append(p->name());
+    }
+    return peersNames;
+}
+
 
 void IvyQt::tcphandle() {
     // accept action
