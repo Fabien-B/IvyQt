@@ -4,6 +4,7 @@
 #include <QObject>
 #include <QTcpSocket>
 #include <QHostAddress>
+#include <QRegularExpression>
 
 enum PeerStatus {
     INIT,
@@ -96,7 +97,7 @@ private:
     QByteArray rcv_array;
     PeerStatus state;
 
-    QMap<QString /*numerical identifier*/, QString /*regex*/> subscriptions;
+    QMap<QString /*numerical identifier*/, QRegularExpression /*regex*/> subscriptions;
 
     // does handshake info has been send to peer ?
     bool info_sent;
