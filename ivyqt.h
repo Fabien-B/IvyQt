@@ -32,6 +32,12 @@ public:
 
     QStringList getPeers();
 
+    /**
+     * @brief setFlushTimeout set the timeout after which buffer will be flushed. Default to 0.
+     * @param msec
+     */
+    void setFlushTimeout(int msec);
+
 signals:
     void peerReady(Peer* peer);
     void directMessage(Peer* peer, int identifier, QString params);
@@ -62,6 +68,7 @@ private:
 
     QString watcherId;
 
+    int flush_timeout;
     bool running;
     bool stopRequested;
 };

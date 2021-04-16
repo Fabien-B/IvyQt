@@ -5,6 +5,7 @@
 #include <QTcpSocket>
 #include <QHostAddress>
 #include <QRegularExpression>
+#include <QTimer>
 
 class IvyQt;
 
@@ -92,6 +93,10 @@ private:    /// to be accessed by IvyQt
      */
     void stop();
 
+    void setFlushTimeout(int msec) {
+        flushTimer->setInterval(msec);
+    }
+
 private:    /// really private stuff
     void process();
     void parseMessage(QByteArray message);
@@ -115,6 +120,8 @@ private:    /// really private stuff
 
     // does handshake info has been received from peer ?
     bool info_rcv;
+
+    QTimer* flushTimer;
 };
 
 #endif // PEER_H

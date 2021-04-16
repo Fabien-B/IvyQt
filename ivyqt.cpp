@@ -5,7 +5,8 @@
 IvyQt::IvyQt(QString name, QString msgReady, QObject *parent) :
     QObject(parent),
     name(name), msgReady(msgReady),
-    udp_socket(nullptr), server(nullptr), nextBindId(0),
+    udp_socket(nullptr), server(nullptr),
+    nextBindId(0), flush_timeout(0),
     running(false), stopRequested(false)
 {
 
@@ -92,6 +93,11 @@ QStringList IvyQt::getPeers() {
     return peersNames;
 }
 
+void IvyQt::setFlushTimeout(int msec) {
+    for(auto peer: qAsConst(peers)) {
+        peer->setFlushTimeout(msec);
+    }
+}
 
 void IvyQt::tcphandle() {
     // accept action
@@ -147,6 +153,8 @@ void IvyQt::newPeer(QTcpSocket* socket) {
     connect(peer, &Peer::quitRequest, this, [=]() {
         emit quitRequest(peer);
     });
+
+    peer->setFlushTimeout(flush_timeout);
 
     // send a synchro message and initial subscriptions.
     peer->sendId(server->serverPort(), name);

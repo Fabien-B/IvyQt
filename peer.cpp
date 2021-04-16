@@ -5,6 +5,14 @@ Peer::Peer(QTcpSocket* tcp_socket, QObject* parent) :
     peerId(""), appName(""), socket(tcp_socket), state(INIT),
     info_sent(false), info_rcv(false)
 {
+    flushTimer = new QTimer(this);
+    flushTimer->setSingleShot(true);
+    connect(flushTimer, &QTimer::timeout, this, [=]() {
+        if(socket) {
+            socket->flush();
+        }
+    });
+
     connect(socket, &QTcpSocket::readyRead, this, [=]() {
         rcv_array += tcp_socket->readAll();
         process();
@@ -14,6 +22,8 @@ Peer::Peer(QTcpSocket* tcp_socket, QObject* parent) :
         state = APP_QUIT;
         emit peerDied(this);
     });
+
+
 }
 
 Peer::~Peer() {
@@ -181,7 +191,7 @@ void Peer::send_data(int type, QString ident, QString params) {
     data += params;
     data += "\n";
     socket->write(data);
-    socket->flush();
+    flushTimer->start();
 }
 
 QString Peer::peer_id(QHostAddress addr, quint16 port) {
