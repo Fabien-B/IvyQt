@@ -32,12 +32,13 @@ int main(int argc, char *argv[])
         ivyqt->start("192.168.1.255", 2011);
     });
 
+    QStringList list = {"Hello you", "Yo toi", "12 abc"};
     auto timer = new QTimer();
-    timer->setInterval(4000);
-    timer->setSingleShot(true);
+    timer->setInterval(2000);
     QObject::connect(timer, &QTimer::timeout, [=]() {
-        qDebug() << "stopping IvyQt...";
-        ivyqt->stop();
+        static int i = 0;
+        ivyqt->send(list[i]);
+        i = (i+1) % list.length();
     });
     timer->start();
 
