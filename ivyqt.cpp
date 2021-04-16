@@ -144,6 +144,9 @@ void IvyQt::newPeer(QTcpSocket* socket) {
     connect(peer, &Peer::directMessage, this, [=](int identifier, QString params) {
         emit directMessage(peer, identifier, params);
     });
+    connect(peer, &Peer::quitRequest, this, [=]() {
+        emit quitRequest(peer);
+    });
 
     // send a synchro message and initial subscriptions.
     peer->sendId(server->serverPort(), name);

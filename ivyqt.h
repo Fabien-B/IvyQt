@@ -35,6 +35,7 @@ public:
 signals:
     void peerReady(Peer* peer);
     void directMessage(Peer* peer, int identifier, QString params);
+    void quitRequest(Peer* peer);
     void peerDied(QString name);
     void stopped();
 

@@ -30,6 +30,7 @@ public:
 signals:
     void message(QString id, QStringList params);
     void directMessage(int identifier, QString params);
+    void quitRequest();
     void peerDied(Peer*);
     // app is ready for this peer : handshake info has been sent and received
     void ready(Peer*);

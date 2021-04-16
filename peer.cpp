@@ -97,6 +97,11 @@ void Peer::parseMessage(QByteArray message) {
         } else {
             qDebug() << "Received Direct message while in state " << state;
         }
+    } else if(type == "8") {
+        // Quit message
+        emit quitRequest();
+    } else {
+        qDebug() << "message " << type << " not handled. Is it in the doc ???";
     }
 }
 
