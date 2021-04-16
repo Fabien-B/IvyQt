@@ -27,6 +27,13 @@ public:
 
     QString name() {return appName;}
 
+    void sendDirectMessage(int identifier, QString params);
+
+    /**
+     * @brief sendQuit ask peer to quit
+     */
+    void sendQuit();
+
 signals:
     void message(QString id, QStringList params);
     void directMessage(int identifier, QString params);

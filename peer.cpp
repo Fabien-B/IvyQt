@@ -165,6 +165,14 @@ void Peer::sendId(quint16 port, QString myName) {
     send_data(6, QString::number(port), myName);
 }
 
+void Peer::sendDirectMessage(int identifier, QString params) {
+    send_data(7, QString::number(identifier), params);
+}
+
+void Peer::sendQuit() {
+    send_data(8, "0", "");
+}
+
 void Peer::send_data(int type, QString ident, QString params) {
     QByteArray data;
     data += QString::number(type) + " ";
