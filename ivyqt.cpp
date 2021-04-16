@@ -12,6 +12,7 @@ IvyQt::IvyQt(QString name, QString msgReady, QObject *parent) :
 }
 
 void IvyQt::start(QString domain, int udp_port) {
+    stopRequested = false;
     // start TCP server
     server = new QTcpServer(this);
     bool res = server->listen();
