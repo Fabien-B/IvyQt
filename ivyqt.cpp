@@ -36,13 +36,14 @@ void IvyQt::start(QString domain, int udp_port) {
     running = true;
 }
 
-
-int IvyQt::bindMessage(QString regex, std::function<void(Peer*, QStringList)> callback) {
+int IvyQt::bindMessage(QString regex, QObject* context, std::function<void(Peer*, QStringList)> callback) {
     nextBindId++;
+
     Binding b = {
         regex,
         callback,
         nextBindId,
+        context,
     };
     bindings[nextBindId] = b;
 
@@ -51,7 +52,30 @@ int IvyQt::bindMessage(QString regex, std::function<void(Peer*, QStringList)> ca
         peer->bind(nextBindId, regex);
     }
 
+    if(context != nullptr) {
+        connect(context, &QObject::destroyed, this, [=](QObject* obj) {
+            // obj is about to be destroyed
+            // remove all callbacks that have obj as context object
+
+            QMutableMapIterator<int, Binding> i(bindings);
+            while (i.hasNext()) {
+                i.next();
+                if (i.value().context == obj) {
+                    // advise all peers to remove this regex
+                    for(auto peer: qAsConst(peers)) {
+                        peer->unBind(i.value().bindId);
+                    }
+                    i.remove();
+                }
+            }
+        });
+    }
+
     return nextBindId;
+}
+
+int IvyQt::bindMessage(QString regex, std::function<void(Peer*, QStringList)> callback) {
+    return bindMessage(regex, nullptr, callback);
 }
 
 void IvyQt::unBindMessage(int bindId) {

@@ -12,6 +12,7 @@ struct Binding {
     QString regex;
     std::function<void(Peer* sender, QStringList params)> callback;
     int bindId;
+    QObject* context;
 };
 
 class IvyQt : public QObject
@@ -22,6 +23,7 @@ public:
     void start(QString domain, int udp_port);
 
     int bindMessage(QString regex, std::function<void(Peer*, QStringList)> callback);
+    int bindMessage(QString regex, QObject* context, std::function<void(Peer*, QStringList)> callback);
     void unBindMessage(int bindId);
     void send(QString message);
 
