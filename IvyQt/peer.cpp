@@ -169,6 +169,7 @@ void Peer::unsubscribe(QString id) {
 
 void Peer::handle_message(QString id, QString params) {
     auto parameters = params.split(0x03);
+    parameters.removeLast();
     emit message(id, parameters);
 }
 
