@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.14)
 
 project(IvyQt LANGUAGES CXX)
 
+include(GNUInstallDirs)
+
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
@@ -19,6 +21,10 @@ add_library(IvyQt STATIC
   peer.h
 )
 
+set_target_properties(IvyQt PROPERTIES
+    VERSION 0.0.1
+)
+
 target_link_libraries(IvyQt PRIVATE
     Qt${QT_VERSION_MAJOR}::Core
     Qt${QT_VERSION_MAJOR}::Network
@@ -28,5 +34,20 @@ target_link_libraries(IvyQt PRIVATE
 target_compile_definitions(IvyQt PRIVATE IVYQT_LIBRARY)
 
 
-install(TARGETS IvyQt DESTINATION lib)
-install(FILES ivyqt.h peer.h DESTINATION include)
+install(TARGETS ${PROJECT_NAME}
+        EXPORT ${PROJECT_NAME}Config 
+        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
+        PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
+)
+
+install(FILES ivyqt.h peer.h DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/IvyQt")
+
+
+export(TARGETS
+        ${PROJECT_NAME}
+        FILE "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake"
+)
+install(EXPORT ${PROJECT_NAME}Config DESTINATION "${CMAKE_INSTALL_DATADIR}/${PROJECT_NAME}/cmake")
+
