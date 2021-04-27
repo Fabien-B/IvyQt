@@ -27,7 +27,6 @@ Peer::Peer(QTcpSocket* tcp_socket, QObject* parent) :
 }
 
 Peer::~Peer() {
-    socket->deleteLater();
 }
 
 QStringList Peer::getBindings() {
