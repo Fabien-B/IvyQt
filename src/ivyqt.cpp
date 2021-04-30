@@ -1,4 +1,4 @@
-#include "ivyqt.h"
+#include <IvyQt/ivyqt.h>
 #include <QUdpSocket>
 #include <QRandomGenerator>
 

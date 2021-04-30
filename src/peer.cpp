@@ -1,4 +1,4 @@
-#include "peer.h"
+#include <IvyQt/peer.h>
 
 Peer::Peer(QTcpSocket* tcp_socket, QObject* parent) :
     QObject(parent),

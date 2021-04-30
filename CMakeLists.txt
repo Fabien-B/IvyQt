@@ -15,11 +15,15 @@ find_package(QT NAMES Qt6 Qt5 COMPONENTS Core Network REQUIRED)
 find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Core Network REQUIRED)
 
 add_library(IvyQt STATIC
-  ivyqt.cpp
-  ivyqt.h
-  peer.cpp
-  peer.h
+  src/ivyqt.cpp
+  src/peer.cpp
 )
+
+target_include_directories(
+    ${PROJECT_NAME}
+    PRIVATE
+    PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/>
+           $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 
 set_target_properties(IvyQt PROPERTIES
     VERSION 0.0.1
@@ -42,12 +46,14 @@ install(TARGETS ${PROJECT_NAME}
         PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
 
-install(FILES ivyqt.h peer.h DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/IvyQt")
 
+install(DIRECTORY ${CMAKE_CURRENT_LIST_DIR}/include/${PROJECT_NAME}/
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME})
 
 export(TARGETS
         ${PROJECT_NAME}
         FILE "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake"
 )
+
 install(EXPORT ${PROJECT_NAME}Config DESTINATION "${CMAKE_INSTALL_DATADIR}/${PROJECT_NAME}/cmake")
 
