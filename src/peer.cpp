@@ -233,12 +233,7 @@ int Peer::sendPing() {
 }
 
 void Peer::send_data(int type, QString ident, QString params) {
-    QByteArray data;
-    data += QString::number(type) + " ";
-    data += ident;
-    data += 0x02;
-    data += params;
-    data += "\n";
+    QByteArray data = (QString::number(type) + " " + ident + QString(0x02) + params + "\n").toUtf8();
     socket->write(data);
     flushTimer->start();
 }

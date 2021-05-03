@@ -32,8 +32,7 @@ void IvyQt::start(QString domain, int udp_port) {
     watcherId = QString::number(QRandomGenerator::system()->generate64());
 
     // forge broadcast data
-    QByteArray data;
-    data += QString("3 %1 %2 %3\n").arg(QString::number(server->serverPort()), watcherId, name);
+    auto data = QString("3 %1 %2 %3\n").arg(QString::number(server->serverPort()), watcherId, name).toUtf8();
     udp_socket->writeDatagram(data, QHostAddress(domain), udp_port);
 
     running = true;
