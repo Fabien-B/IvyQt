@@ -17,6 +17,8 @@ find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Core Network REQUIRED)
 add_library(IvyQt STATIC
   src/ivyqt.cpp
   src/peer.cpp
+  include/IvyQt/ivyqt.h
+  include/IvyQt/peer.h
 )
 
 target_include_directories(
