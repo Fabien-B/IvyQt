@@ -39,20 +39,29 @@ void IvyQt::start(QString domain, int udp_port) {
 }
 
 int IvyQt::bindMessage(QString regex, QObject* context, std::function<void(Peer*, QStringList)> callback) {
-    nextBindId++;
+    auto existing = std::find_if(bindings.begin(), bindings.end(),
+        [=](Binding b){
+            return b.regex == regex;
+        });
+    if(existing == bindings.end()) {
+        // this regex is not used yet
+        nextBindId++;
+        Binding b = {
+            regex,
+            nextBindId,
+            {{callback, context}},
+        };
+        bindings[nextBindId] = b;
 
-    Binding b = {
-        regex,
-        callback,
-        nextBindId,
-        context,
-    };
-    bindings[nextBindId] = b;
+        // publish regex to all peers
+        for(auto peer: qAsConst(peers)) {
+            peer->bind(nextBindId, regex);
+        }
 
-    // publish regex to all peers
-    for(auto peer: qAsConst(peers)) {
-        peer->bind(nextBindId, regex);
+    } else {
+        bindings[existing->bindId].callbacks.append({callback, context});
     }
+
 
     if(context != nullptr) {
         connect(context, &QObject::destroyed, this, [=](QObject* obj) {
@@ -62,8 +71,18 @@ int IvyQt::bindMessage(QString regex, QObject* context, std::function<void(Peer*
             QMutableMapIterator<int, Binding> i(bindings);
             while (i.hasNext()) {
                 i.next();
-                if (i.value().context == obj) {
-                    // advise all peers to remove this regex
+
+                QMutableListIterator<Callback> cbs(i.value().callbacks);
+                while (cbs.hasNext()) {
+                    cbs.next();
+                    if(cbs.value().context == obj) {
+                        // remove Callback if context is matching
+                        cbs.remove();
+                    }
+                }
+                
+                if(i.value().callbacks.size() == 0) {
+                    // no more callbacks to this regex. Advise all peers to remove this regex.
                     for(auto peer: qAsConst(peers)) {
                         peer->unBind(i.value().bindId);
                     }
@@ -175,7 +194,9 @@ void IvyQt::newPeer(QTcpSocket* socket) {
     connect(peer, &Peer::message,       this, [=](QString id, QStringList params) {
         int bindId = id.toInt();
         if(bindings.contains(bindId)) {
-            bindings[bindId].callback(peer, params);
+            for(auto cbc: bindings[bindId].callbacks) {
+                cbc.cb(peer, params);
+            }
         }
     });
     connect(peer, &Peer::directMessage, this, [=](int identifier, QString params) {

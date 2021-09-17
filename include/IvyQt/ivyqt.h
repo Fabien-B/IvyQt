@@ -8,11 +8,15 @@
 #include <functional>
 #include "peer.h"
 
+struct Callback {
+    std::function<void(Peer* sender, QStringList params)> cb;
+    QObject* context;
+};
+
 struct Binding {
     QString regex;
-    std::function<void(Peer* sender, QStringList params)> callback;
     int bindId;
-    QObject* context;
+    QList<Callback> callbacks;
 };
 
 class IvyQt : public QObject
