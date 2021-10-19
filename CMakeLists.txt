@@ -14,7 +14,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(QT NAMES Qt6 Qt5 COMPONENTS Core Network REQUIRED)
 find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Core Network REQUIRED)
 
-add_library(IvyQt STATIC
+add_library(IvyQt SHARED
   src/ivyqt.cpp
   src/peer.cpp
   include/IvyQt/ivyqt.h
