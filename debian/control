@@ -9,7 +9,7 @@ Homepage: https://gitlab.com/ivybus/IvyQt
 Package: ivy-qt-dev
 Section: libdevel
 Architecture: any
-Depends: ivy-qt (= ${binary:Version}), ${misc:Depends}, qt5base-dev
+Depends: ivy-qt (= ${binary:Version}), qtbase5-dev
 Description: Ivy/Qt software bus. development Package
  This package is needed for compiling applications using ivy-qt.
  Ivy is mostly a communication convention between processes.
