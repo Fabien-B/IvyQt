@@ -1,3 +1,9 @@
+ivy-qt (0.0.1ubuntu1) jammy; urgency=medium
+
+  * update for jammy. 
+
+ -- Fabien <fabien.bonneval@gmail.com>  Fri, 01 Apr 2022 18:06:03 +0200
+
 ivy-qt (0.0.1) focal; urgency=medium
 
   * Initial release.
