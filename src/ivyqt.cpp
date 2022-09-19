@@ -6,7 +6,7 @@ IvyQt::IvyQt(QString name, QString msgReady, QObject *parent) :
     QObject(parent),
     name(name), msgReady(msgReady),
     udp_socket(nullptr), server(nullptr),
-    nextBindId(0), flush_timeout(0),
+    nextRegexId(0), nextBindId(0), flush_timeout(0),
     running(false), stopRequested(false)
 {
 
@@ -39,60 +39,60 @@ void IvyQt::start(QString domain, int udp_port) {
 }
 
 int IvyQt::bindMessage(QString regex, QObject* context, std::function<void(Peer*, QStringList)> callback) {
-    auto existing = std::find_if(bindings.begin(), bindings.end(),
-        [=](Binding b){
-            return b.regex == regex;
+
+    auto existing = std::find_if(regexes.begin(), regexes.end(),
+        [=](QString reg){
+            return reg == regex;
         });
-    if(existing == bindings.end()) {
+
+    int regexId;
+
+    if(existing == regexes.end()) {
         // this regex is not used yet
-        nextBindId++;
-        Binding b = {
-            regex,
-            nextBindId,
-            {{callback, context}},
-        };
-        bindings[nextBindId] = b;
+        //qDebug() << "new regex:" << regex;
+        regexId = nextRegexId;
+        nextRegexId += 1;
+        regexes[regexId] = regex;
 
         // publish regex to all peers
         for(auto peer: qAsConst(peers)) {
-            peer->bind(nextBindId, regex);
+            peer->bind(regexId, regex);
         }
 
     } else {
-        bindings[existing->bindId].callbacks.append({callback, context});
+        //qDebug() << "regex exist:" << regex << existing.key();
+        regexId = existing.key();
     }
+
+
+    Binding b = {
+        regexId,
+        callback,
+        context,
+    };
+    int bindId = nextBindId;
+    bindings[bindId] = b;
+    nextBindId += 1;
 
 
     if(context != nullptr) {
         connect(context, &QObject::destroyed, this, [=](QObject* obj) {
             // obj is about to be destroyed
-            // remove all callbacks that have obj as context object
-
-            QMutableMapIterator<int, Binding> i(bindings);
-            while (i.hasNext()) {
-                i.next();
-
-                QMutableListIterator<Callback> cbs(i.value().callbacks);
-                while (cbs.hasNext()) {
-                    cbs.next();
-                    if(cbs.value().context == obj) {
-                        // remove Callback if context is matching
-                        cbs.remove();
-                    }
+            // remove all bindings that have obj as context object
+            QList<int> bindIdsDel;
+            for(auto it=bindings.constBegin(); it!=bindings.constEnd(); it++) {
+                if(it.value().context == obj) {
+                    bindIdsDel.append(it.key());
                 }
-                
-                if(i.value().callbacks.size() == 0) {
-                    // no more callbacks to this regex. Advise all peers to remove this regex.
-                    for(auto peer: qAsConst(peers)) {
-                        peer->unBind(i.value().bindId);
-                    }
-                    i.remove();
-                }
+            }
+
+            for(auto bindId: bindIdsDel) {
+                unBindMessage(bindId);
             }
         });
     }
 
-    return nextBindId;
+    return bindId;
 }
 
 int IvyQt::bindMessage(QString regex, std::function<void(Peer*, QStringList)> callback) {
@@ -100,10 +100,27 @@ int IvyQt::bindMessage(QString regex, std::function<void(Peer*, QStringList)> ca
 }
 
 void IvyQt::unBindMessage(int bindId) {
+    // obj is about to be destroyed
+    // remove all bindings that have obj as context object
     bindings.remove(bindId);
-    // advise all peers to remove this regex
-    for(auto peer: qAsConst(peers)) {
-        peer->unBind(bindId);
+
+    // clear unsued regexes
+    QMutableMapIterator<int, QString> reg(regexes);
+    while (reg.hasNext()) {
+        reg.next();
+
+        bool regex_used = std::any_of(bindings.begin(), bindings.end(),
+            [=](Binding bd){
+                return bd.regexId == reg.key();
+            });
+        if(!regex_used) {
+            for(auto peer: qAsConst(peers)) {
+                // no more callbacks to this regex. Advise all peers to remove this regex.
+                peer->unBind(reg.key());
+            }
+            //remove regex
+            reg.remove();
+        }
     }
 }
 
@@ -192,10 +209,10 @@ void IvyQt::newPeer(QTcpSocket* socket) {
     connect(peer, &Peer::ready,         this, &IvyQt::newPeerReady);
     connect(peer, &Peer::peerDied,      this, &IvyQt::deletePeer);
     connect(peer, &Peer::message,       this, [=](QString id, QStringList params) {
-        int bindId = id.toInt();
-        if(bindings.contains(bindId)) {
-            for(auto cbc: bindings[bindId].callbacks) {
-                cbc.cb(peer, params);
+        int regexId = id.toInt();
+        for(auto &binding: bindings) {
+            if(binding.regexId == regexId) {
+                binding.cb(peer, params);
             }
         }
     });
@@ -211,7 +228,7 @@ void IvyQt::newPeer(QTcpSocket* socket) {
     // send a synchro message and initial subscriptions.
     peer->sendId(server->serverPort(), name);
     for(auto &b: bindings) {
-        peer->bind(b.bindId, b.regex);
+        peer->bind(b.regexId, regexes[b.regexId]);
     }
     peer->end_initial_bindings();
     peer->setInfoSent();
