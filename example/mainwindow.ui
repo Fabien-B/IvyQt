@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>384</width>
-    <height>240</height>
+    <width>482</width>
+    <height>427</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -53,7 +53,7 @@
     <item>
      <widget class="QLabel" name="label_4">
       <property name="text">
-       <string>enter text and press ENTER to send it.</string>
+       <string>Send message on Ivy:</string>
       </property>
      </widget>
     </item>
@@ -62,7 +62,53 @@
       <item>
        <widget class="QLineEdit" name="line_edit"/>
       </item>
+      <item>
+       <widget class="QPushButton" name="send_button">
+        <property name="text">
+         <string>Send</string>
+        </property>
+       </widget>
+      </item>
      </layout>
+    </item>
+    <item>
+     <widget class="Line" name="line">
+      <property name="orientation">
+       <enum>Qt::Horizontal</enum>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QLabel" name="label_5">
+      <property name="text">
+       <string>Bind to a regex:</string>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <layout class="QHBoxLayout" name="horizontalLayout_3">
+      <item>
+       <widget class="QLineEdit" name="regex_lineEdit"/>
+      </item>
+      <item>
+       <widget class="QPushButton" name="subscribe_button">
+        <property name="text">
+         <string>Subscribe</string>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </item>
+    <item>
+     <widget class="QFrame" name="sub_frame">
+      <property name="frameShape">
+       <enum>QFrame::StyledPanel</enum>
+      </property>
+      <property name="frameShadow">
+       <enum>QFrame::Raised</enum>
+      </property>
+      <layout class="QVBoxLayout" name="verticalLayout_2"/>
+     </widget>
     </item>
     <item>
      <spacer name="verticalSpacer">
@@ -84,7 +130,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>384</width>
+     <width>482</width>
      <height>22</height>
     </rect>
    </property>
