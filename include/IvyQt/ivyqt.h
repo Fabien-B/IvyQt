@@ -64,7 +64,7 @@ private slots:
     void newPeerReady(Peer* peer);
 
 private:
-
+    void unBindMessagePrivate(int bindId);
     void newPeer(QTcpSocket* socket);
     void completeStop();
     QString name;

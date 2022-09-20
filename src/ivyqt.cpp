@@ -100,6 +100,13 @@ int IvyQt::bindMessage(QString regex, std::function<void(Peer*, QStringList)> ca
 }
 
 void IvyQt::unBindMessage(int bindId) {
+    // Schedule the unbind for the next event loop
+    // If unBindMessagePrivate is called in a callback,
+    // "bindings" is modified while iterating over it, causing the program to crash
+    QTimer::singleShot(0, [=]{unBindMessagePrivate(bindId);});
+}
+
+void IvyQt::unBindMessagePrivate(int bindId) {
     // obj is about to be destroyed
     // remove all bindings that have obj as context object
     bindings.remove(bindId);
