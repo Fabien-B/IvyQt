@@ -234,8 +234,8 @@ void IvyQt::newPeer(QTcpSocket* socket) {
 
     // send a synchro message and initial subscriptions.
     peer->sendId(server->serverPort(), name);
-    for(auto &b: bindings) {
-        peer->bind(b.regexId, regexes[b.regexId]);
+    for(auto reg = regexes.begin(); reg != regexes.end(); reg++) {
+        peer->bind(reg.key(), reg.value());
     }
     peer->end_initial_bindings();
     peer->setInfoSent();
