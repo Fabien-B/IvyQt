@@ -157,13 +157,22 @@ void Peer::parseMessage(QByteArray message) {
 }
 
 void Peer::subscribe(QString id, QString regex) {
-    assert(!subscriptions.contains(id));
-    subscriptions[id] = QRegularExpression(regex);
+    if(!subscriptions.contains(id)) {
+        subscriptions[id] = QRegularExpression(regex);
+    } else {
+        qCritical() << QString("subscribe id %1 already used! Ignoring regex \"%2\"").arg(id).arg(regex);
+    }
+
+
 }
 
 void Peer::unsubscribe(QString id) {
-    assert(subscriptions.contains(id));
-    subscriptions.remove(id);
+    if(subscriptions.contains(id)) {
+        subscriptions.remove(id);
+    } else {
+        qCritical() << QString("subscribe id %1 unknown!").arg(id);
+    }
+
 }
 
 void Peer::handle_message(QString id, QString params) {
