@@ -192,7 +192,10 @@ void Peer::sendMessage(QString message) {
             auto caps = match.capturedTexts();
             // remove the implicit capturing group number 0, capturing the substring matched by the entire pattern
             caps.removeAt(0);
-            QString params = caps.join(0x03);
+            QString params;
+            for(auto& cap: caps) {
+                params += cap + QChar(0x03);
+            }
             QString ident = i.key();
             send_data(2, ident, params);
         }
