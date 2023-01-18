@@ -91,6 +91,9 @@ private:
 
     QMap<int /*bindId*/, Binding> bindings;
 
+    //bindings whose removal has been asked, but not yet performed. (next event loop)
+    QList<int> bindings_removing;
+
     int nextRegexId;
     int nextBindId;
 

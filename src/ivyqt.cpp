@@ -85,17 +85,9 @@ int IvyQt::bindMessage(QString regex, QObject* context, std::function<void(Peer*
 
     if(context != nullptr) {
         connect(context, &QObject::destroyed, this, [=](QObject* obj) {
-            // obj is about to be destroyed
-            // remove all bindings that have obj as context object
-            QList<int> bindIdsDel;
-            for(auto it=bindings.constBegin(); it!=bindings.constEnd(); it++) {
-                if(it.value().context == obj) {
-                    bindIdsDel.append(it.key());
-                }
-            }
-
-            for(auto bindId: bindIdsDel) {
-                unBindMessage(bindId);
+            unBindMessage(bindId);
+            if(logLevel >= IVY_LOG_MEDIUM) {
+                qCInfo(lcIvy()) << "Request unbind" << bindId << "with destroyed context" << context;
             }
         });
     }
@@ -115,13 +107,16 @@ void IvyQt::unBindMessage(int bindId) {
     // Schedule the unbind for the next event loop
     // If unBindMessagePrivate is called in a callback,
     // "bindings" is modified while iterating over it, causing the program to crash
-    QTimer::singleShot(0, [=]{unBindMessagePrivate(bindId);});
+    QTimer::singleShot(0, this, [=]{unBindMessagePrivate(bindId);});
+    bindings_removing.append(bindId);
 }
 
 void IvyQt::unBindMessagePrivate(int bindId) {
-    // obj is about to be destroyed
-    // remove all bindings that have obj as context object
     bindings.remove(bindId);
+    bindings_removing.removeAll(bindId);
+    if(logLevel >= IVY_LOG_MEDIUM) {
+        qCInfo(lcIvy()) << "Unbind" << bindId;
+    }
 
     // clear unsued regexes
     QMutableMapIterator<int, QString> reg(regexes);
@@ -232,9 +227,14 @@ void IvyQt::newPeer(QTcpSocket* socket) {
     connect(peer, &Peer::peerDied,      this, &IvyQt::deletePeer);
     connect(peer, &Peer::message,       this, [=](QString id, QStringList params) {
         int regexId = id.toInt();
-        for(auto &binding: bindings) {
-            if(binding.regexId == regexId) {
-                binding.cb(peer, params);
+        for(auto binding = bindings.begin(); binding != bindings.end(); ++binding) {
+            if(binding->regexId == regexId) {
+                if(!bindings_removing.contains(binding.key())) {
+                    if(logLevel >= IVY_LOG_HIGH) {
+                        qCInfo(lcIvy()) << "Call binding" << binding.key();
+                    }
+                    binding->cb(peer, params);
+                }
             }
         }
     });
