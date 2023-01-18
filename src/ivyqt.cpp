@@ -2,12 +2,16 @@
 #include <QUdpSocket>
 #include <QRandomGenerator>
 
+
+Q_LOGGING_CATEGORY(lcIvy,"IVY")
+
+
 IvyQt::IvyQt(QString name, QString msgReady, QObject *parent) :
     QObject(parent),
     name(name), msgReady(msgReady),
     udp_socket(nullptr), server(nullptr),
     nextRegexId(0), nextBindId(0), flush_timeout(0),
-    running(false), stopRequested(false)
+    running(false), stopRequested(false), logLevel(IVY_LOG_NONE)
 {
 
 }
@@ -34,6 +38,10 @@ void IvyQt::start(QString domain, int udp_port) {
     // forge broadcast data
     auto data = QString("3 %1 %2 %3\n").arg(QString::number(server->serverPort()), watcherId, name).toUtf8();
     udp_socket->writeDatagram(data, QHostAddress(domain), udp_port);
+
+    if(logLevel >= IVY_LOG_LOW) {
+        qCInfo(lcIvy()) << QString("Start on %1:%2 using TCP port %3.").arg(domain).arg(udp_port).arg(server->serverPort());
+    }
 
     running = true;
 }
@@ -92,6 +100,10 @@ int IvyQt::bindMessage(QString regex, QObject* context, std::function<void(Peer*
         });
     }
 
+    if(logLevel >= IVY_LOG_MEDIUM) {
+        qCInfo(lcIvy()) << "Bind" << regex << "with id" << bindId << "and context" << context;
+    }
+
     return bindId;
 }
 
@@ -135,6 +147,9 @@ void IvyQt::stop() {
     stopRequested = true;
     if(!running) {
         return;
+    }
+    if(logLevel >= IVY_LOG_LOW) {
+        qCInfo(lcIvy()) << "Stopping...";
     }
     if(peers.length() == 0) {
         completeStop();
@@ -271,4 +286,7 @@ void IvyQt::completeStop() {
     udp_socket = nullptr;
     server = nullptr;
     emit stopped();
+    if(logLevel >= IVY_LOG_LOW) {
+        qCInfo(lcIvy()) << "Stop completed.";
+    }
 }

@@ -7,6 +7,16 @@
 #include <QUdpSocket>
 #include <functional>
 #include "peer.h"
+#include <QLoggingCategory>
+
+Q_DECLARE_LOGGING_CATEGORY(lcIvy)
+
+enum IvyLogLevel {
+    IVY_LOG_NONE,
+    IVY_LOG_LOW,
+    IVY_LOG_MEDIUM,
+    IVY_LOG_HIGH,
+};
 
 struct Binding {
     int regexId;
@@ -50,6 +60,8 @@ public:
      */
     void setFlushTimeout(int msec);
 
+    void setLogLevel(IvyLogLevel level) {logLevel = level;}
+
 signals:
     void peerReady(Peer* peer);
     void directMessage(Peer* peer, int identifier, QString params);
@@ -87,6 +99,7 @@ private:
     int flush_timeout;
     bool running;
     bool stopRequested;
+    IvyLogLevel logLevel;
 };
 
 #endif // IVYQT_H
