@@ -1,4 +1,4 @@
-ivy-qt (1.0.0) UNRELEASED; urgency=medium
+ivy-qt (1.0.0ubuntu1~ubuntu20.04) focal; urgency=medium
 
   * mutualise bindings: multiple bindings to the same regex does not cause
     increase network activity.
