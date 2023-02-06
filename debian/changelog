@@ -1,3 +1,12 @@
+ivy-qt (1.0.0) UNRELEASED; urgency=medium
+
+  * mutualise bindings: multiple bindings to the same regex does not cause
+    increase network activity.
+  * Fix Unbind errors (use after free).
+  * Fix protocol error (missing ETX after last substring).
+
+ -- Fabien <fabien.bonneval@gmail.com>  Mon, 06 Feb 2023 12:27:27 +0100
+
 ivy-qt (0.0.1ubuntu1) jammy; urgency=medium
 
   * update for jammy. 

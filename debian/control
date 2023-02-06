@@ -1,7 +1,7 @@
 Source: ivy-qt
 Priority: extra
 Section: devel
-Maintainer: Gautier Hattenberger <gautier.hattenberger@enac.fr>
+Maintainer: Fabien Bonneval <fabien.bonneval@enac.fr>
 Build-Depends: debhelper, cmake, qtbase5-dev
 Standards-Version: 4.5.0
 Homepage: https://gitlab.com/ivybus/IvyQt

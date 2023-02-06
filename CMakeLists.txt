@@ -28,7 +28,7 @@ target_include_directories(
            $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>)
 
 set_target_properties(IvyQt PROPERTIES
-    VERSION 0.0.1
+    VERSION 1.0.0
 )
 
 target_link_libraries(IvyQt PRIVATE
