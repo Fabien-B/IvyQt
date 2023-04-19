@@ -11,8 +11,15 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(QT NAMES Qt6 Qt5 COMPONENTS Core Network REQUIRED)
-find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Core Network REQUIRED)
+set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+
+if(DEFINED ENV{QT_DIR})
+    set(Qt5_DIR $ENV{QT_DIR})
+    set(Qt6_DIR $ENV{QT_DIR})
+endif()
+find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Core Network)
+find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core Network)
+
 
 add_library(IvyQt SHARED
   src/ivyqt.cpp
