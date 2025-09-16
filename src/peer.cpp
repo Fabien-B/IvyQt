@@ -174,7 +174,7 @@ void Peer::unsubscribe(QString id) {
 }
 
 void Peer::handle_message(QString id, QString params) {
-    auto parameters = params.split(0x03);
+    auto parameters = params.split(QChar(0x03));
     parameters.removeLast();
     emit message(id, parameters);
 }
@@ -243,7 +243,7 @@ int Peer::sendPing() {
 }
 
 void Peer::send_data(int type, QString ident, QString params) {
-    QByteArray data = (QString::number(type) + " " + ident + QString(0x02) + params + "\n").toUtf8();
+    QByteArray data = (QString::number(type) + " " + ident + QString(QChar(0x02)) + params + "\n").toUtf8();
     socket->write(data);
     flushTimer->start();
 }
